@@ -1,0 +1,72 @@
+HRNet Cephalometric Landmark Detection - Test Results
+============================================================
+
+Overall Statistics (60 samples):
+Mean MRE: 1.826 ± 0.391 mm
+Median MRE: 1.761 mm
+SDR@2.0mm: 63.3%
+SDR@2.5mm: 77.6%
+SDR@3.0mm: 85.1%
+SDR@4.0mm: 94.4%
+
+Individual Results:
+200: MRE=1.699mm, SDR@2mm=63.2%
+399: MRE=1.837mm, SDR@2mm=63.2%
+034: MRE=1.607mm, SDR@2mm=73.7%
+210: MRE=1.388mm, SDR@2mm=73.7%
+094: MRE=1.385mm, SDR@2mm=73.7%
+085: MRE=2.335mm, SDR@2mm=31.6%
+376: MRE=1.731mm, SDR@2mm=73.7%
+095: MRE=2.007mm, SDR@2mm=47.4%
+225: MRE=2.083mm, SDR@2mm=47.4%
+127: MRE=1.791mm, SDR@2mm=68.4%
+010: MRE=1.903mm, SDR@2mm=52.6%
+386: MRE=1.501mm, SDR@2mm=78.9%
+057: MRE=1.727mm, SDR@2mm=73.7%
+073: MRE=2.144mm, SDR@2mm=52.6%
+133: MRE=1.835mm, SDR@2mm=68.4%
+043: MRE=1.574mm, SDR@2mm=68.4%
+373: MRE=1.650mm, SDR@2mm=78.9%
+278: MRE=0.977mm, SDR@2mm=94.7%
+232: MRE=2.322mm, SDR@2mm=57.9%
+380: MRE=1.303mm, SDR@2mm=78.9%
+078: MRE=2.230mm, SDR@2mm=42.1%
+016: MRE=2.137mm, SDR@2mm=63.2%
+392: MRE=1.461mm, SDR@2mm=68.4%
+241: MRE=1.593mm, SDR@2mm=63.2%
+001: MRE=1.908mm, SDR@2mm=47.4%
+397: MRE=1.365mm, SDR@2mm=78.9%
+115: MRE=1.879mm, SDR@2mm=52.6%
+237: MRE=1.876mm, SDR@2mm=57.9%
+264: MRE=1.452mm, SDR@2mm=73.7%
+105: MRE=2.028mm, SDR@2mm=52.6%
+396: MRE=1.645mm, SDR@2mm=63.2%
+378: MRE=1.559mm, SDR@2mm=78.9%
+301: MRE=1.513mm, SDR@2mm=73.7%
+058: MRE=2.279mm, SDR@2mm=57.9%
+315: MRE=1.250mm, SDR@2mm=94.7%
+117: MRE=1.922mm, SDR@2mm=63.2%
+114: MRE=1.970mm, SDR@2mm=63.2%
+265: MRE=1.440mm, SDR@2mm=78.9%
+160: MRE=2.257mm, SDR@2mm=42.1%
+142: MRE=1.644mm, SDR@2mm=78.9%
+310: MRE=1.945mm, SDR@2mm=57.9%
+056: MRE=2.582mm, SDR@2mm=31.6%
+077: MRE=1.678mm, SDR@2mm=73.7%
+026: MRE=1.949mm, SDR@2mm=63.2%
+083: MRE=1.515mm, SDR@2mm=73.7%
+383: MRE=1.401mm, SDR@2mm=84.2%
+149: MRE=1.632mm, SDR@2mm=63.2%
+182: MRE=2.352mm, SDR@2mm=31.6%
+023: MRE=2.625mm, SDR@2mm=31.6%
+174: MRE=2.025mm, SDR@2mm=63.2%
+047: MRE=1.732mm, SDR@2mm=78.9%
+297: MRE=1.797mm, SDR@2mm=68.4%
+340: MRE=1.557mm, SDR@2mm=68.4%
+071: MRE=3.338mm, SDR@2mm=15.8%
+344: MRE=2.212mm, SDR@2mm=47.4%
+040: MRE=1.652mm, SDR@2mm=63.2%
+295: MRE=1.819mm, SDR@2mm=68.4%
+321: MRE=2.334mm, SDR@2mm=52.6%
+031: MRE=1.525mm, SDR@2mm=78.9%
+154: MRE=1.702mm, SDR@2mm=68.4%

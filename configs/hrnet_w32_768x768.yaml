@@ -1,0 +1,118 @@
+# HRNet-W32 Configuration for Cephalometric Landmark Detection
+
+# Data Configuration
+DATA:
+  DATASET: 'ceph'
+  DATA_ROOT: 'C:\Users\lacha\Downloads\ISBI Lateral Cephs'
+  IMAGES_DIR: 'images'
+  LANDMARKS_DIR: 'landmarks'
+  NUM_LANDMARKS: 19
+  SPLIT_RATIOS: [0.7, 0.15, 0.15]  # train/val/test
+  SEED: 42
+  
+# Input/Output Configuration
+INPUT:
+  IMAGE_SIZE: [768, 768]
+  ORIGINAL_SIZE: [1935, 2400]
+  HEATMAP_SIZE: [192, 192]  # 768/4 for 4x upsampling
+  SIGMA: 2.0
+  NORMALIZE: True
+  MEAN: [0.485, 0.456, 0.406]
+  STD: [0.229, 0.224, 0.225]
+
+# Model Configuration
+MODEL:
+  NAME: 'hrnet_w32'
+  PRETRAINED: True
+  PRETRAINED_PATH: ''
+  NUM_JOINTS: 19
+  
+  # HRNet Specific
+  STAGE1:
+    NUM_MODULES: 1
+    NUM_BRANCHES: 1
+    NUM_BLOCKS: [4]
+    NUM_CHANNELS: [64]
+    BLOCK: 'BOTTLENECK'
+    
+  STAGE2:
+    NUM_MODULES: 1
+    NUM_BRANCHES: 2
+    NUM_BLOCKS: [4, 4]
+    NUM_CHANNELS: [32, 64]
+    BLOCK: 'BASIC'
+    
+  STAGE3:
+    NUM_MODULES: 4
+    NUM_BRANCHES: 3
+    NUM_BLOCKS: [4, 4, 4]
+    NUM_CHANNELS: [32, 64, 128]
+    BLOCK: 'BASIC'
+    
+  STAGE4:
+    NUM_MODULES: 3
+    NUM_BRANCHES: 4
+    NUM_BLOCKS: [4, 4, 4, 4]
+    NUM_CHANNELS: [32, 64, 128, 256]
+    BLOCK: 'BASIC'
+
+# Training Configuration
+TRAIN:
+  BATCH_SIZE: 4
+  GRAD_ACCUMULATION: 4  # effective batch size = 16
+  EPOCHS: 400
+  LR: 0.0001
+  WEIGHT_DECAY: 0.01
+  OPTIMIZER: 'AdamW'
+  SCHEDULER: 'cosine'
+  WARMUP_EPOCHS: 20
+  EARLY_STOPPING: 50
+  AMP: True  # Automatic Mixed Precision
+  
+# Loss Configuration
+LOSS:
+  HEATMAP_LOSS: 'mse'
+  COORD_LOSS: 'wing'
+  HEATMAP_WEIGHT: 1.0
+  COORD_WEIGHT: 0.5
+  
+  # Wing Loss Parameters
+  WING_OMEGA: 10.0
+  WING_EPSILON: 2.0
+
+# Loss Configuration
+LOSS:
+  MSE_WEIGHT: 1.0
+  WING_WEIGHT: 0.5
+  WING_OMEGA: 10.0
+  WING_EPSILON: 2.0
+
+# Augmentation Configuration
+AUGMENTATION:
+  ROTATION: 12  # degrees
+  SCALE: [0.9, 1.1]
+  ELASTIC: True
+  CLAHE: True
+  GAUSSIAN_NOISE: 0.02
+  CUTOUT: 0.05
+  PROB: 0.8
+
+# Evaluation Configuration
+EVAL:
+  BATCH_SIZE: 8
+  METRICS: ['MRE', 'SDR@2mm', 'SDR@2.5mm']
+  SAVE_PREDICTIONS: True
+  VISUALIZE: True
+
+# Logging Configuration
+LOGGING:
+  USE_TENSORBOARD: True
+  USE_WANDB: False
+  LOG_INTERVAL: 10
+  SAVE_INTERVAL: 1  # Save every epoch
+  
+# Paths
+PATHS:
+  MODEL_DIR: 'models'
+  LOG_DIR: 'runs'
+  OUTPUT_DIR: 'output' 
