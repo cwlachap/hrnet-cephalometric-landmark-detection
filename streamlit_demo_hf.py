@@ -367,7 +367,7 @@ def main():
                     with col1:
                         st.subheader("🎯 Landmark Detection Results")
                         fig = visualize_landmarks(
-                            original_image,
+                            processed_image,
                             pred_coords,
                             title=f"Uploaded Image: {uploaded_file.name}"
                         )
