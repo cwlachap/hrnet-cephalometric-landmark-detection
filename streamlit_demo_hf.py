@@ -122,7 +122,7 @@ def calculate_mre(pred_coords, true_coords, transform_params):
 def predict_landmarks(model, image_tensor, device):
     """Predict landmarks for a single image."""
     with torch.no_grad():
-        image_tensor = image_tensor.unsqueeze(0).to(device)
+        image_tensor = image_tensor.to(device)
         pred_heatmaps = model(image_tensor)
         
         # Extract coordinates
