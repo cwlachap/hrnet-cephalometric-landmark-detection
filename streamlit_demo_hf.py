@@ -186,17 +186,18 @@ def process_uploaded_image(uploaded_file, model, device, config):
     image_np = np.array(image)
     
     # Preprocess for model (similar to your dataset preprocessing)
-    # This is a simplified version - you might need to adjust based on your preprocessing pipeline
-    if len(image_np.shape) == 3:
-        image_gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+    # Keep as RGB since model expects 3 channels
+    if len(image_np.shape) == 2:
+        # Convert grayscale to RGB by repeating channels
+        image_rgb = np.stack([image_np, image_np, image_np], axis=2)
     else:
-        image_gray = image_np
+        image_rgb = image_np
     
     # Resize to model input size (768x768)
-    image_resized = cv2.resize(image_gray, (768, 768))
+    image_resized = cv2.resize(image_rgb, (768, 768))
     
-    # Normalize and convert to tensor
-    image_tensor = torch.from_numpy(image_resized).float().unsqueeze(0) / 255.0
+    # Convert to CHW format (Channel-Height-Width) and normalize
+    image_tensor = torch.from_numpy(image_resized.transpose(2, 0, 1)).float().unsqueeze(0) / 255.0
     
     # Predict landmarks
     pred_coords = predict_landmarks(model, image_tensor, device)
