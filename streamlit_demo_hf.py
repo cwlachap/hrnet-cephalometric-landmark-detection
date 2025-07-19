@@ -176,8 +176,8 @@ def visualize_landmarks(image, pred_coords, true_coords=None, title="Landmark De
     return fig
 
 def process_uploaded_image(uploaded_file, model, device, config):
-    """Process uploaded image and return predictions."""
-    # Load and preprocess image
+    """Process uploaded image using EXACT same preprocessing as training dataset."""
+    # Load image
     image = Image.open(uploaded_file)
     if image.mode != 'RGB':
         image = image.convert('RGB')
@@ -185,24 +185,64 @@ def process_uploaded_image(uploaded_file, model, device, config):
     # Convert to numpy array
     image_np = np.array(image)
     
-    # Preprocess for model (similar to your dataset preprocessing)
-    # Keep as RGB since model expects 3 channels
-    if len(image_np.shape) == 2:
-        # Convert grayscale to RGB by repeating channels
-        image_rgb = np.stack([image_np, image_np, image_np], axis=2)
-    else:
-        image_rgb = image_np
+    # Apply EXACT same preprocessing as training dataset
+    # 1. Resize with aspect ratio preservation (letterbox padding)
+    h, w = image_np.shape[:2]
+    target_h, target_w = 768, 768  # Model input size
     
-    # Resize to model input size (768x768)
-    image_resized = cv2.resize(image_rgb, (768, 768))
+    # Calculate scale factor (minimum to fit both dimensions)
+    scale = min(target_w / w, target_h / h)
     
-    # Convert to CHW format (Channel-Height-Width) and normalize
-    image_tensor = torch.from_numpy(image_resized.transpose(2, 0, 1)).float().unsqueeze(0) / 255.0
+    # Calculate new dimensions
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+    
+    # Resize image with cubic interpolation
+    resized_image = cv2.resize(image_np, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+    
+    # Calculate padding
+    pad_left = (target_w - new_w) // 2
+    pad_top = (target_h - new_h) // 2
+    pad_right = target_w - new_w - pad_left
+    pad_bottom = target_h - new_h - pad_top
+    
+    # Apply letterbox padding
+    padded_image = cv2.copyMakeBorder(
+        resized_image, 
+        pad_top, pad_bottom, pad_left, pad_right, 
+        cv2.BORDER_CONSTANT, 
+        value=[0, 0, 0]
+    )
+    
+    # 2. Apply EXACT ImageNet normalization as in training
+    # Convert to [0,1]
+    image_normalized = padded_image.astype(np.float32) / 255.0
+    
+    # Apply ImageNet normalization (same as training)
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    image_normalized = (image_normalized - mean) / std
+    
+    # 3. Convert to PyTorch tensor with CHW format
+    image_tensor = torch.from_numpy(image_normalized).permute(2, 0, 1).float().unsqueeze(0)
+    
+    # Store transform params for coordinate conversion
+    transform_params = {
+        'scale': scale,
+        'pad_left': pad_left,
+        'pad_top': pad_top,
+        'original_size': (h, w)
+    }
     
     # Predict landmarks
     pred_coords = predict_landmarks(model, image_tensor, device)
     
-    return image_np, pred_coords, image_resized
+    # Convert coordinates back to original image space
+    pred_coords_orig = pred_coords.copy()
+    pred_coords_orig[:, 0] = (pred_coords[:, 0] - pad_left) / scale
+    pred_coords_orig[:, 1] = (pred_coords[:, 1] - pad_top) / scale
+    
+    return image_np, pred_coords_orig, padded_image
 
 def main():
     st.title("🦷 HRNet Cephalometric Landmark Detection Demo")
@@ -367,7 +407,7 @@ def main():
                     with col1:
                         st.subheader("🎯 Landmark Detection Results")
                         fig = visualize_landmarks(
-                            processed_image,
+                            original_image,
                             pred_coords,
                             title=f"Uploaded Image: {uploaded_file.name}"
                         )
