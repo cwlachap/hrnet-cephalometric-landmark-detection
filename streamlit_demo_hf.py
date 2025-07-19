@@ -122,15 +122,95 @@ def calculate_mre(pred_coords, true_coords, transform_params):
 def predict_landmarks(model, image_tensor, device):
     """Predict landmarks for a single image."""
     with torch.no_grad():
-        image_tensor = image_tensor.to(device)
-        pred_heatmaps = model(image_tensor)
+        pred_heatmaps = model(image_tensor.to(device))
         
-        # Extract coordinates
+        # Extract coordinates using soft argmax
         pred_coords = soft_argmax_2d(pred_heatmaps, normalize=False)
         pred_coords = scale_coordinates(pred_coords, (192, 192), (768, 768))
         pred_coords = pred_coords.squeeze(0).cpu().numpy()
         
     return pred_coords
+
+def validate_cephalometric_image(image_np):
+    """
+    Validate uploaded image meets minimum requirements for cephalometric analysis.
+    """
+    h, w = image_np.shape[:2]
+    
+    # Size requirements
+    if min(h, w) < 400:
+        return False, "❌ Image too small. Minimum 400 pixels required for accurate landmark detection."
+    
+    if max(h, w) > 8000:
+        return False, "❌ Image too large. Maximum 8000 pixels to avoid processing issues."
+    
+    # Aspect ratio check (should be roughly vertical for lateral cephalograms)
+    aspect_ratio = h / w
+    if not (0.5 <= aspect_ratio <= 2.0):
+        return False, f"⚠️ Unusual aspect ratio {aspect_ratio:.2f}. Expected 0.5-2.0 for lateral cephalograms."
+    
+    # Basic contrast check
+    if len(image_np.shape) == 3:
+        mean_intensity = np.mean(cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY))
+    else:
+        mean_intensity = np.mean(image_np)
+        
+    if mean_intensity < 20 or mean_intensity > 235:
+        return False, f"⚠️ Poor image contrast detected (mean: {mean_intensity:.1f}). This may affect accuracy."
+    
+    return True, "✅ Image passed validation checks."
+
+def display_image_requirements():
+    """Display comprehensive requirements for optimal results."""
+    with st.expander("📋 Image Requirements & Tips for Best Results"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **✅ Optimal Image Characteristics:**
+            - **Format**: PNG, JPEG, BMP, or TIFF
+            - **Size**: 800+ pixels (width and height)
+            - **Orientation**: Standard lateral cephalometric view
+            - **Quality**: High contrast X-ray image
+            - **Position**: Complete skull profile visible
+            
+            **✅ What This Model Supports:**
+            - Standard lateral cephalometric radiographs
+            - Digital X-rays from modern systems
+            - High-resolution scanned films
+            - Grayscale or color images
+            """)
+            
+        with col2:
+            st.markdown("""
+            **⚠️ Important Notes:**
+            - Trained on **1935×2400** pixel images
+            - Expects **19 anatomical landmarks** to be visible
+            - Performance may vary with unusual positioning
+            - Not validated on pathological cases
+            
+            **❌ Not Supported:**
+            - PA (frontal) cephalometric views
+            - Panoramic radiographs
+            - Poor quality/very low contrast images
+            - Images with significant rotation (>15°)
+            """)
+
+        st.markdown("""
+        ---
+        **🎯 Tips for Best Results:**
+        1. **Image Quality**: Ensure good contrast between bone and soft tissue
+        2. **Complete View**: Include full skull profile from nasal spine to vertebrae
+        3. **Positioning**: Minimal head tilt or rotation for standard lateral view
+        4. **Format**: Use uncompressed formats (PNG, BMP) when possible
+        5. **Resolution**: Higher resolution generally provides better landmark accuracy
+        
+        **📊 Model Training Details:**
+        - **Dataset**: ISBI Lateral Cephalograms (400 images)
+        - **Architecture**: HRNet-W32 (29.3M parameters)
+        - **Training Resolution**: 768×768 pixels
+        - **Validation Accuracy**: ~1.2mm average error
+        """)
 
 def visualize_landmarks(image, pred_coords, true_coords=None, title="Landmark Detection Results"):
     """Create visualization with overlaid landmarks."""
@@ -395,6 +475,31 @@ def main():
         )
         
         if uploaded_file is not None:
+            # First validate the uploaded image
+            with st.spinner("🔍 Validating uploaded image..."):
+                try:
+                    # Load image for validation
+                    image = Image.open(uploaded_file)
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
+                    image_np = np.array(image)
+                    
+                    # Validate image meets requirements
+                    is_valid, validation_message = validate_cephalometric_image(image_np)
+                    
+                    if not is_valid:
+                        st.error("**❌ Image Validation Failed**")
+                        st.error(validation_message)
+                        st.info("💡 Please check the **Image Requirements** section above and upload a different image.")
+                        st.stop()  # Stop processing here
+                    else:
+                        st.success(validation_message)
+                        
+                except Exception as e:
+                    st.error(f"❌ Error loading image: {str(e)}")
+                    st.stop()
+            
+            # Now process the validated image
             with st.spinner("🔮 Processing uploaded image..."):
                 try:
                     original_image, pred_coords, processed_image = process_uploaded_image(
@@ -468,6 +573,7 @@ def main():
             - Lateral cephalometric radiographs
             - Any resolution (will be resized automatically)
             """)
+            display_image_requirements()
     
     # About information
     if test_dataset is None:
@@ -484,6 +590,34 @@ def main():
             - **Mean Radial Error**: ~1.2-1.6mm
             - **Detection Rate**: ~80-85% within 2mm
             - **Inference Time**: <1 second per image
+            
+            ### ⚠️ Clinical Limitations & Considerations
+            
+            **Training Data Characteristics:**
+            - **Resolution**: 1935×2400 pixels (standardized)
+            - **Format**: High-quality BMP radiographs
+            - **Positioning**: Standard lateral cephalometric positioning
+            - **Population**: Research dataset (may not represent all populations)
+            
+            **Real-World Performance:**
+            - ✅ **Best Results**: Standard lateral cephs with good contrast
+            - ⚠️ **Variable Results**: Different resolutions, positioning variations
+            - ❌ **Poor Results**: Low contrast, significant rotation, pathological cases
+            
+            **Clinical Use Guidelines:**
+            1. **Always verify** landmark positions manually
+            2. **Cross-check** measurements with clinical findings
+            3. **Use as assistance**, not replacement for clinical judgment
+            4. **Consider retraining** on your specific population/equipment
+            
+            ### 📚 Research & Development
+            
+            This model demonstrates state-of-the-art deep learning for cephalometric analysis. 
+            For clinical deployment, consider:
+            - Validation on your specific dataset
+            - Integration with PACS systems
+            - Compliance with medical device regulations
+            - Continuous quality monitoring
             
             ### 🏥 Applications
             - Orthodontic treatment planning
