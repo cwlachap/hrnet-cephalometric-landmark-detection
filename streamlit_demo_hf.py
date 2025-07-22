@@ -77,7 +77,7 @@ def load_model_and_data():
     # Load model
     with st.spinner("🧠 Loading HRNet model..."):
         model = get_hrnet_w32(config['MODEL'])
-        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        checkpoint = torch.load(model_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         model = model.to(device)
         model.eval()
